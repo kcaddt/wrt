@@ -48,24 +48,53 @@ def generate(NAME, FILE,  HOST, PORT):
         port=PORT
     )
 
+    if not os.path.exists( os.path.join('generated', NAME.upper()) ):
+        os.mkdir(
+            os.path.join('generated', NAME.upper())
+        )
+
     os.mkdir(
-        os.path.join('generated', NAME.upper()  +  _TS)
+        os.path.join('generated', NAME.upper(), _TS)
     )
     shutil.copyfile(
         FILE, 
-        os.path.join('generated', NAME.upper() + _TS, FILE)
+        os.path.join('generated', NAME.upper(), _TS, FILE)
     )
 
-    with open(os.path.join('generated', NAME.upper() + _TS, 'main.py'),'w') as f:
+    with open(os.path.join('generated', NAME.upper(), _TS, 'main.py'),'w') as f:
         f.write(generated_output)
 
     return 1
 
 if __name__ == '__main__':
 
-    _NAME, _HOST, _PORT = "TEST", "0.0.0.0","8888"
-    generate(_NAME, 'methods.py', _HOST, _PORT)
+    parser = argparse.ArgumentParser(description = 'Launch wrt')
+    parser.add_argument('instruction',  type=str)     
 
+    parser.add_argument('-n', '--name', help = "name of the project", type=str)
+    parser.add_argument('-m', '--methods', default=None, type=str)           
+    parser.add_argument('--host', default="0.0.0.0", type=str)
+    parser.add_argument('--port', default="8888", type=int) 
 
+    args = parser.parse_args()
 
+    if args.instruction not in ['create', 'ls']:
+        parser.error("%s : unknown instruction" % args.instruction)
+    
+    if args.instruction == "create":
+        if (args.name is None) or (args.methods is None):
+            parser.error("create requires a name and a methods file")
+        if not os.path.isfile(args.methods):
+            parser.error("%s : can not open methods file" % args.methods)
+
+        generate(args.name, args.methods , args.host, args.port)
+
+    # Add timestamp creation, number of version, number of route of last version 
+    if args.instruction == "ls":
+        projects = [e for e in os.listdir('generated') if e[0] != '.']
+        neg = 's' if len(projects) > 1 else ''
+
+        print("{0} project{1} found : \n".format(len(projects), neg))
+        for el in projects:
+            print("    - " + el)
 
